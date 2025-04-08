@@ -1,0 +1,82 @@
+sinais unix
+
+funcoes especificadas
+
+server pid
+
+tratamento da string recebida
+
+como o server envia a string
+
+como o  cliente lê a string
+
+tamanho da string suportada
+
+
+quanto tempo a string demora a ser impressa
+
+sobre o servidor receber string de vários clientes ao mesmo tempo
+
+----------------------------------------------------
+
+Sinais são uma forma de comunicação entre processos (IPC) no Unix/Linux. Eles são usados para notificar um processo de que um evento ocorreu.
+
+Os sinais (SIGUSR1 e SIGUSR2) são usados para enviar dados binários (bits) do cliente para o servidor. Cada sinal representa um bit (SIGUSR1 = 1, SIGUSR2 = 0).
+
+-Funções principais:
+    - sigaction: Configura um manipulador de sinal para processar sinais recebidos.
+    - kill: Envia um sinal para um processo.
+    - pause: Faz o servidor aguardar a chegada de sinais.
+
+OPERACOES BIT A BIT
+
+sao operações que manipulam diretamente os bits dos dados. São essenciais para codificar e decodificar dados binários.
+
+O cliente codifica caracteres em bits usando operações bit a bit (>>, &) e o servidor os decodifica de volta para caracteres.
+
+- Conceitos principais:
+    - Deslocamento de bits (`>>`, `<<`)**: Usado para manipular bits específicos.
+    -OR bit a bit (`|`)**: Combina bits para reconstruir um caractere.
+    -AND bit a bit (`&`)**: Extrai bits específicos.
+
+
+
+IPC (comunicação entre processos)
+
+Comunicação entre processos usando sinais.
+Comunicação entre processos (IPC) permite que processos troquem dados. Os sinais são uma das formas de IPC.
+
+O cliente envia uma mensagem ao servidor por meio da transmissão de sinais, e o servidor os recebe e os processa para reconstruir a mensagem.
+
+	
+
+	o projeto atualmente nao suporta caracteres UNICODE.
+
+	Porque?
+
+	o servidor processa os sinais para reconstruir caracteres bit a bit. Assumimos que cada caracter tem 8 bits, o que é suficiente para ASCII, mas nao para Unicode (utf-8 pode ter entre 8 até 32 bits).
+
+
+
+
+PROCESSO DE FUNCIONAMENTO
+
+- servidor inicia e imprime o pid
+- configura os handlers para sigusr1 e sigusr2 (???)
+- fica a espera de sinais
+
+- s1 significa bit 1
+- s2 significa bit 0
+- cada bit é armazenado na variável C usando operações bit a bit (descrever melhor)
+
+- a cada 8 bits recebidos, um caractere é formado
+- armazena o caracter no buffer 'message'
+- se necessario, o buffer é redimensionado
+
+- gerencia memoria com calloc (trocar para malloc)
+	- 
+
+- quando o caractere  nulo é recebido:
+	- a mensagem é impressa
+	- a memoria é liberada
+	- as variáveis sao restadas para a próxima mensagem

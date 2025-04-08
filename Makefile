@@ -6,7 +6,7 @@
 #    By: ldummer- <ldummer-@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/28 19:49:32 by ldummer-          #+#    #+#              #
-#    Updated: 2025/03/06 17:17:10 by ldummer-         ###   ########.fr        #
+#    Updated: 2025/04/07 19:42:21 by ldummer-         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -26,6 +26,8 @@ BUILD_DIR	= .build
 
 SRC_SERVER	= $(addprefix $(SRC_DIR)/, server.c )
 SRC_CLIENT	= $(addprefix $(SRC_DIR)/, client.c )
+
+# adicionar atalho para compilar utils.c
 
 OBJS_SERVER	= $(SRC_SERVER:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 OBJS_CLIENT	= $(SRC_CLIENT:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -74,10 +76,11 @@ $(NAME_CLIENT): $(LIBFT_LIB) $(OBJS_CLIENT)
 	@printf "\n"
 
 $(LIBFT_LIB):
-	@$(MAKE) $(LIBFT_DIR)
+	make extra -C $(LIBFT_DIR)
 
 deps: get_libft
-	@echo "$(GREEN_BOLD)Nothing to be done!$(RESET)"
+	@printf "$(GREEN_BOLD)Nothing to be done!\n$(RESET)"
+
 
 get_libft:
 	@if [ ! -d "$(LIBFT_DIR)" ]; then \
