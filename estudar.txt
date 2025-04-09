@@ -74,9 +74,207 @@ PROCESSO DE FUNCIONAMENTO
 - se necessario, o buffer é redimensionado
 
 - gerencia memoria com calloc (trocar para malloc)
+	- limite de segurança de alocação de memoria de 64 * 1024 (64K) (cerca de 65 mil caracteres)
 	- 
 
 - quando o caractere  nulo é recebido:
 	- a mensagem é impressa
 	- a memoria é liberada
 	- as variáveis sao restadas para a próxima mensagem
+
+Usa SA_SIGINFO para receber informações extras do sinal (QUAIS ????)
+
+## Sinais Unix
+
+- São notificações de software enviadas de um processo para outro
+- Funcionam como interrupções em nível de software
+- Principais características:
+    - Assíncronos
+    - Limitados em quantidade (cerca de 31 sinais diferentes)
+    - Não carregam dados adicionais por padrão
+    - São numerados de 1 a 31 (tradicionalmente)
+
+
+## PID (Process ID)
+
+- Identificador único para cada processo no sistema
+- Características:
+    - Número inteiro positivo
+    - Atribuído pelo kernel
+    - Necessário para enviar sinais a processos específicos
+- No código:
+
+pid = getpid(); *// Obtém o PID do processo atual*
+
+
+## SIGUSR1 e SIGUSR2
+
+- Sinais definidos pelo usuário para uso personalizado
+- Características:
+    - SIGUSR1 geralmente é sinal 10
+    - SIGUSR2 geralmente é sinal 12
+    - Não têm comportamento padrão definido pelo sistema
+- No Minitalk:
+    - SIGUSR1 representa bit 1
+    - SIGUSR2 representa bit 0
+
+## Bits e Manipulação Bit a Bit
+
+- No código, bits são manipulados para formar caracteres:
+
+if (signum == SIGUSR1)
+
+c = c | (1 << bit_count); *// Operação OR bit a bit*
+
+- Cada caractere é formado por 8 bits
+- O deslocamento `<<` move o bit para a posição correta
+- O operador `|` (OR) combina os bits
+
+## SA_SIGINFO
+
+- Flag que modifica o comportamento do handler de sinais
+- Características:
+    - Permite receber informações adicionais sobre o sinal
+    - Usa `sa_sigaction` em vez de `sa_handler`
+    - Fornece contexto extra através de `siginfo_t`
+
+sa.sa_sigaction = handler;
+
+sa.sa_flags = SA_SIGINFO;
+
+## IPC (Inter-Process Communication)
+
+- Mecanismos para processos se comunicarem
+- Tipos comuns de IPC:
+    1. Sinais (usado no Minitalk)
+    2. Pipes
+    3. Sockets
+    4. Memória compartilhada
+    5. Semáforos
+    6. Filas de mensagens
+
+
+
+### Exemplo de Fluxo de Dados
+
+Para enviar o caractere 'A' (ASCII 65 = 01000001):
+
+SIGUSR2 → 0
+
+SIGUSR1 → 1
+
+SIGUSR2 → 0
+
+SIGUSR2 → 0
+
+SIGUSR2 → 0
+
+SIGUSR2 → 0
+
+SIGUSR2 → 0
+
+SIGUSR1 → 1
+
+Este método de IPC é:
+
+- Lento (bit a bit)
+- Confiável (garantido pelo kernel)
+- Simples de implementar
+- Limitado em volume de dados
+
+# Funções Importantes no Contexto do Minitalk
+
+## Funções de Temporização
+
+### sleep
+
+unsigned int sleep(unsigned int seconds);
+
+- Suspende a execução do processo pelo número especificado de segundos
+- Retorna 0 se completou o tempo ou o número de segundos restantes se interrompido
+- Mais grosseiro, precisão em segundos
+
+### usleep
+
+int usleep(useconds_t microseconds);
+
+- Versão mais precisa do sleep
+- Opera em microssegundos (1 segundo = 1.000.000 microssegundos)
+- Útil para sincronização fina entre processos
+- No Minitalk: pode ser usado para evitar perda de sinais
+
+## Funções de Gerenciamento de Processos
+
+### getpid
+
+pid_t getpid(void);
+
+- Retorna o PID do processo atual
+- Sempre bem-sucedida (não falha)
+- No Minitalk: usado para informar ao cliente o PID do servidor
+
+pid = getpid();
+
+ft_printf("pid: %d\n", pid);
+
+### kill
+
+int kill(pid_t pid, int sig);
+
+- Envia um sinal para um processo específico
+- Retorna 0 em sucesso, -1 em erro
+- Requer permissões apropriadas
+- Usado pelo cliente para enviar SIGUSR1/SIGUSR2
+
+
+
+## Funções de Manipulação de Sinais
+
+### sigaction
+
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+
+- Interface moderna para manipulação de sinais
+- Mais flexível e portável que signal()
+- Permite configuração detalhada do handler
+- No Minitalk:
+
+sa.sa_sigaction = handler;
+
+sa.sa_flags = SA_SIGINFO;
+
+sigaction(SIGUSR1, &sa, NULL);## **Função de Término**
+
+### exit
+
+void exit(int status);
+
+- Termina imediatamente o processo
+- Executa funções registradas com atexit()
+- Fecha arquivos abertos
+- Status 0 indica sucesso, outros valores indicam erro
+- No Minitalk:
+
+void ft_perror_exit(char *message, int exit_number)
+
+{
+
+// ...
+
+exit(exit_number);
+
+}
+
+
+
+################################
+Considerações Importantes
+
+
+Sinais:
+    - São assíncronos por natureza
+    - Podem se perder se muito próximos
+
+Processos:
+    - kill requer permissões apropriadas
+    - PIDs são únicos mas podem ser reutilizados

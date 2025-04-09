@@ -2,6 +2,8 @@
 // if SIGUSR1 => 1
 // if SIGUSR2 => 0
 
+#define BUFFER_SIZE (64 * 1024)
+
 void	ft_perror_exit(char *message, int exit_number)
 {
 	size_t	i;
@@ -22,15 +24,13 @@ void	handler(int signum, siginfo_t *info, void *context)
 	static char		c = 0;
 	static char		*message = NULL;
 	static size_t	index = 0;
-	static size_t	size = 1;
 
 	// 	TROCAR BUZZER SIZE POR CALLOC E STRLEN
-	//usleep(100);
 	(void)context;
 	(void)info;
 	if (!message)
 	{
-		message = ft_calloc(size, sizeof(char));
+		message = malloc(BUFFER_SIZE);
 		if (!message)
 			ft_perror_exit("Memory allocation failed", 1);
 	}
@@ -39,15 +39,10 @@ void	handler(int signum, siginfo_t *info, void *context)
 	bit_count++;
 	if (bit_count == 8)
 	{
-		if (index >= size - 1)
+		if (index >= BUFFER_SIZE - 1)
 		{
-			size *= 2;
-			char *temp = ft_calloc(size, sizeof(char));
-			if (!temp)
-				ft_perror_exit("Memory allocation failed", 1);
-			ft_memcpy(temp, message, index);
 			free(message);
-			message = temp;
+			ft_perror_exit("Message too large (max 64KB)", 1);
 		}
 		message[index++] = c;
 		if (c == '\0')
@@ -55,9 +50,11 @@ void	handler(int signum, siginfo_t *info, void *context)
 			ft_putstr_fd(message, 1);
 			ft_putchar_fd('\n', 1);
 			free(message);
-			message = NULL;
+			message = malloc(BUFFER_SIZE);
+			if (!message)
+				ft_perror_exit("Memory allocation failed", 1);
+			ft_bzero(message, BUFFER_SIZE);
 			index = 0;
-			size = 1;
 		}
 		bit_count = 0;
 		c = 0;

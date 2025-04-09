@@ -1,8 +1,5 @@
 #include "minitalk.h"
 
-void	ft_perror_exit(char *message, int exit_number);
-
-
 void	send_char(int pid, char c)
 {
 	int	bit;
