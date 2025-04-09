@@ -2,8 +2,6 @@
 // if SIGUSR1 => 1
 // if SIGUSR2 => 0
 
-#define BUFFER_SIZE (64 * 1024)
-
 void	ft_perror_exit(char *message, int exit_number)
 {
 	size_t	i;
@@ -24,37 +22,43 @@ void	handler(int signum, siginfo_t *info, void *context)
 	static char		c = 0;
 	static char		*message = NULL;
 	static size_t	index = 0;
+	static size_t	message_length = 0;
+	static int		receiving_length = 1;
+	static size_t	length_bits_received = 0;
 
-	// 	TROCAR BUZZER SIZE POR CALLOC E STRLEN
 	(void)context;
 	(void)info;
-	if (!message)
+	if (receiving_length)
 	{
-		message = malloc(BUFFER_SIZE);
-		if (!message)
-			ft_perror_exit("Memory allocation failed", 1);
+		if (signum == SIGUSR1)
+			message_length |= (1UL << length_bits_received);
+		length_bits_received++;
+		if (length_bits_received == sizeof(size_t) * 8)
+		{
+			receiving_length = 0;
+			message = malloc(message_length + 1);
+			if (!message)
+				ft_perror_exit("Memory allocation failed", 1);
+			message[message_length] = '\0';
+		}
+		return;
 	}
 	if (signum == SIGUSR1)
 		c = c | (1 << bit_count);
 	bit_count++;
 	if (bit_count == 8)
 	{
-		if (index >= BUFFER_SIZE - 1)
-		{
-			free(message);
-			ft_perror_exit("Message too large (max 64KB)", 1);
-		}
 		message[index++] = c;
 		if (c == '\0')
 		{
 			ft_putstr_fd(message, 1);
 			ft_putchar_fd('\n', 1);
 			free(message);
-			message = malloc(BUFFER_SIZE);
-			if (!message)
-				ft_perror_exit("Memory allocation failed", 1);
-			ft_bzero(message, BUFFER_SIZE);
+			message = NULL;
 			index = 0;
+			receiving_length = 1;
+			message_length = 0;
+			length_bits_received = 0;
 		}
 		bit_count = 0;
 		c = 0;
@@ -63,11 +67,10 @@ void	handler(int signum, siginfo_t *info, void *context)
 }
 int	main(int ac, char **av)
 {
-	int	pid;
-
+	int					pid;
+	struct sigaction	sa;
+	
 	(void)av;
-	struct sigaction sa;
-
 	if (ac != 1)
 		ft_perror_exit("Usage: ./server\n", 1);
 	pid = getpid();
@@ -77,14 +80,9 @@ int	main(int ac, char **av)
 	
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
-
-
 	// mantem o servidor rodando para receber sinais
 	while(1)
 		pause();
-
-
-
 }
 
 
